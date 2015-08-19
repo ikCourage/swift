@@ -179,7 +179,7 @@ package swift.net.media
 			if (_readedHead === true) {
 				//数据流里的数据满足条件，开始读数据
 				if (bytesAvailable >= _msgLen) {
-					readBytes(_buffer, 0, _msgLen);
+					readBytes(_buffer, _buffer.bytesAvailable, _msgLen);
 					if (null !== _socketDataF) {
 						var b:ByteArray = new ByteArray();
 						b.writeBytes(_buffer);
@@ -195,7 +195,7 @@ package swift.net.media
 				}
 				else {
 					_msgLen -= bytesAvailable;
-					readBytes(_buffer);
+					readBytes(_buffer, _buffer.bytesAvailable);
 				}
 			}
 		}
