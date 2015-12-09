@@ -13,11 +13,6 @@ package swift.core.magic
 		magic_internal var next:Vector.<MagicBlockData>;
 		magic_internal var parent:MagicBlockData;
 		
-		magic_internal var blockIndex:uint;
-		magic_internal var nextIndex:uint;
-		
-		magic_internal var flag:Boolean;
-		
 		public function MagicBlockData()
 		{
 		}

@@ -16,7 +16,9 @@ package swift.core.shell
 		shell_internal var _properties:Object;
 		
 		shell_internal var _shells:Dictionary;
+		shell_internal var _shellsLength:uint;
 		shell_internal var _commands:Dictionary;
+		shell_internal var _commandsLength:uint;
 		
 		shell_internal var _parent:Shell;
 		shell_internal var _shellController:ShellController;
@@ -30,6 +32,8 @@ package swift.core.shell
 			for each (var i:Shell in _shells) {
 				i.clear();
 			}
+			_shellsLength = 0;
+			_commandsLength = 0;
 			_name = null;
 			_command = null;
 			_option = null;

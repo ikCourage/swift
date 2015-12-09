@@ -24,7 +24,9 @@ package swift.controller.cli
 
 	public class CLIView extends USprite
 	{
-		shell_internal var _shellController:ShellController
+		shell_internal var _version:String;
+		shell_internal var _shellController:ShellController;
+		shell_internal var _show:Boolean;
 		shell_internal var _scroller:Object;
 		shell_internal var _messageTextField:TextField;
 		shell_internal var _inputTextField:TextField;
@@ -37,14 +39,14 @@ package swift.controller.cli
 		shell_internal var _x:Number = 0;
 		shell_internal var _y:Number = 0;
 		shell_internal var _color:uint = uint.MAX_VALUE;
-		shell_internal var _messageColor:uint = 0xE9E9E9;
-		shell_internal var _messageBgColor:uint = 0x222222;
-		shell_internal var _inputColor:uint = 0xE9E9E9;
-		shell_internal var _inputBgColor:uint = 0x333333;
+		shell_internal var _messageColor:uint = 0x111111;//0xE9E9E9
+		shell_internal var _messageBgColor:uint = 0xFFFFFF;//0x222222
+		shell_internal var _inputColor:uint = 0x111111;//0xE9E9E9
+		shell_internal var _inputBgColor:uint = 0xDDDDDD;//0x333333
 		shell_internal var _tipColor:uint = 0xFF0000;
 		shell_internal var _textV:Vector.<uint>;
 		shell_internal var _textVLength:uint;
-		shell_internal var _colorType:Object;
+		shell_internal var _colorType:Object = {0: 0x111111, 1: 0x3D3D3D, 2: 0xCD5B45, 3: 0x436EEE, 4: 0x228B22, 100: 0xFF0066};
 		shell_internal var _filterType:int = -1;
 		shell_internal var _filterF:Function;
 		/**
@@ -59,7 +61,6 @@ package swift.controller.cli
 		
 		shell_internal function init():void
 		{
-			_textV = new Vector.<uint>();
 			_textVLength = 0;
 			
 //			3F9A42
@@ -418,6 +419,16 @@ package swift.controller.cli
 			e = null;
 		}
 		
+		shell_internal function setInputText(text:String, exec:Boolean = true):void
+		{
+			if (null !== _inputTextField) {
+				_inputTextField.text = text;
+				if (exec === true) {
+					_inputTextField.dispatchEvent(new KeyboardEvent(KeyboardEvent.KEY_DOWN, true, false, 0, Keyboard.ENTER));
+				}
+			}
+		}
+		
 		public function getShell():Shell
 		{
 			return new Shell_cli(this);
@@ -428,6 +439,7 @@ package swift.controller.cli
 			if (null !== parent) {
 				__removeEvent();
 				cacheAsBitmap = false;
+				_show = false;
 				_messageTextField.text = "";
 				_inputTextField.text = "";
 				_tipTextField.text = "";
@@ -442,6 +454,7 @@ package swift.controller.cli
 			if (null === _messageTextField) init();
 			
 			cacheAsBitmap = true;
+			_show = true;
 			
 			view = null !== view ? view : Ais.IMain.stage;
 			view.addChild(this);
@@ -517,8 +530,11 @@ package swift.controller.cli
 			if (null != _scroller) {
 				_scroller.updateView();
 			}
-			if (time == true) {
+			if (time === true) {
 				appendText("Last login: " + (new Date()).toString());
+				if (null !== _version) {
+					appendText(" " + _version);
+				}
 			}
 			_inputTextField.text = "";
 			_tipTextField.text = "";
@@ -526,7 +542,7 @@ package swift.controller.cli
 		
 		public function appendLine(message:Array, color:uint = uint.MAX_VALUE, type:uint = ShellControllerEnum.TYPE_DEFAULT, tag:uint = 1):void
 		{
-			if (null === _messageTextField) return;
+			if (null === _messageTextField || _show === false) return;
 			var executors:Vector.<Executor> = _shellController._shellControllerData._executors;
 			if (null === executors) return;
 			var shell:Shell, executor:Executor = executors[executors.length - 1];
@@ -577,7 +593,7 @@ package swift.controller.cli
 		
 		public function appendText(text:String, color:uint = uint.MAX_VALUE, type:uint = ShellControllerEnum.TYPE_DEFAULT, tag:uint = 1):void
 		{
-			if (null === _messageTextField) return;
+			if (null === _messageTextField || _show === false) return;
 			var i:uint = _textVLength !== 0 ? _textV[_textVLength - 1] : 0;
 			var l:uint = i + text.length;
 			_textV[_textVLength++] = type;
@@ -593,7 +609,7 @@ package swift.controller.cli
 			tf.color = color;
 			_messageTextField.setTextFormat(tf, i, l);
 			if (null != _scroller) {
-				_scroller.updateView();
+				_scroller.layoutScroll(_scroller.getSource().x, _scroller.getSource().y, 0, 0, 1);
 			}
 			_messageTextField.scrollV = _messageTextField.maxScrollV;
 			tf = null;
@@ -692,7 +708,8 @@ internal class Shell_cli extends Shell
 			"tipColor", 1,
 			"alpha", 1,
 			"type", 1,
-			"filter", 2
+			"filter", 2,
+			"version", 1
 		];
 		shell.callback = __setExec;
 		shell.description = "显示设置 当 0 < x y width height < 1 时，按百分比计算\n" +
@@ -801,6 +818,9 @@ internal class Shell_cli extends Shell
 						_cliView._filterF = __filter;
 					}
 					b = 2;
+					break;
+				case "version":
+					_cliView["_" + args[1][i][0]] = args[1][i][1];
 					break;
 			}
 		}

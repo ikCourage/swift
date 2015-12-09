@@ -76,6 +76,12 @@ package swift.controller.cli
 			parameters = null;
 		}
 		
+		public function set version(value:String):void
+		{
+			_view._version = value;
+			value = null;
+		}
+		
 		override public function clear():void
 		{
 			super.clear();

@@ -64,6 +64,10 @@ package swift.core.shell.sbin
 							str += "\n\n" + shell.description;
 						}
 						str += "\n//          " + shell.command;
+						l_2 = shell._shellData._shellsLength;
+						if (l_2 !== 0) {
+							str += " / " + l_2;
+						}
 						if (null !== shell.option) {
 							opt0 = shell.option[0] as Vector.<String>;
 							opt1 = shell.option[1] as Vector.<int>;

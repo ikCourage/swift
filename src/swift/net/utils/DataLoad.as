@@ -37,8 +37,8 @@ package swift.net.utils
 				k = Math.random();
 			}
 			else if (url is Array) {
-				t = url[1] ? url[1] : url[0];
-				k = url[2] ? url[2] : Math.random();
+				t = url.length > 1 ? url[1] : url[0];
+				k = url.lehgth > 2 ? url[2] : Math.random();
 			}
 			else if (url is URLRequest) {
 				t = url.url;

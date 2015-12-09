@@ -187,10 +187,12 @@ package swift.net.media
 						_socketDataF(b);
 						b = null;
 					}
-					_buffer.clear();
-					_readedHead = false;
-					if (bytesAvailable >= _headLen) {
-						__parseSocketData();
+					if (null !== _buffer) {
+						_buffer.clear();
+						_readedHead = false;
+						if (bytesAvailable >= _headLen) {
+							__parseSocketData();
+						}
 					}
 				}
 				else {

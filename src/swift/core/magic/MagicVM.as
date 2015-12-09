@@ -152,6 +152,26 @@ package swift.core.magic
 			var i:uint = 1, l:uint, v:Vector.<String> = Vector.<String>(key.substr(1).split(".")), obj:*;
 			l = v.length - 1;
 			switch (key.charAt(0)) {
+				case "$":
+					if (l === 0) {
+						key = getObj(sData, currentVarData, v[0]);
+						obj = currentVarData.getVars(key, true);
+						if (null === obj) {
+							if (null === currentVarData.vars) {
+								currentVarData.vars = new Dictionary();
+							}
+							obj = currentVarData.vars;
+						}
+						obj[key] = value;
+					}
+					else {
+						obj = currentVarData.getVar(getObj(sData, currentVarData, v[0]), true);
+						for (; i < l; i++) {
+							obj = obj[getObj(sData, currentVarData, v[i])];
+						}
+						obj[getObj(sData, currentVarData, v[i])] = value;
+					}
+					break;
 				case "@":
 					if (null !== sData) {
 						if (l === 0) {
@@ -164,21 +184,6 @@ package swift.core.magic
 							}
 							obj[getObj(sData, currentVarData, v[i])] = value;
 						}
-					}
-					break;
-				case "$":
-					if (l === 0) {
-						if (null === currentVarData.vars) {
-							currentVarData.vars = new Dictionary();
-						}
-						currentVarData.vars[getObj(sData, currentVarData, v[0])] = value;
-					}
-					else {
-						obj = currentVarData.vars[getObj(sData, currentVarData, v[0])];
-						for (; i < l; i++) {
-							obj = obj[getObj(sData, currentVarData, v[i])];
-						}
-						obj[getObj(sData, currentVarData, v[i])] = value;
 					}
 					break;
 			}
@@ -239,6 +244,13 @@ package swift.core.magic
 			}
 			var i:int, k:String = key, obj:* = null;
 			switch (k.charAt(0)) {
+				case "$":
+					i = k.indexOf(".");
+					obj = currentVarData.getVar(k.substring(1, i === -1 ? k.length : i), true);
+					if (i !== -1) {
+						obj = getPro(sData, currentVarData, obj, Vector.<String>(k.substr(i + 1).split(".")));
+					}
+					break;
 				case "@":
 					if (null !== sData) {
 						i = k.indexOf(".");
@@ -252,13 +264,6 @@ package swift.core.magic
 						else {
 							obj = null;
 						}
-					}
-					break;
-				case "$":
-					i = k.indexOf(".");
-					obj = currentVarData.getVar(k.substring(1, i === -1 ? k.length : i), true);
-					if (i !== -1) {
-						obj = getPro(sData, currentVarData, obj, Vector.<String>(k.substr(i + 1).split(".")));
 					}
 					break;
 				case "^":
@@ -461,7 +466,7 @@ package swift.core.magic
 				case "cast":
 					setObj(sData, currentVarData, values[1], doOp(sData, currentVarData, values.slice(2))(o));
 					break;
-				case "tf":
+				case "typeof":
 					if (l > 2) {
 						o = doOp(sData, currentVarData, values.slice(2));
 					}
@@ -500,7 +505,7 @@ package swift.core.magic
 				case "&&":
 				case "as":
 				case "cast":
-				case "tf":
+				case "typeof":
 					setOp(sData, currentVarData, values);
 					break;
 				case "!":
@@ -602,6 +607,7 @@ package swift.core.magic
 			var b:Boolean, o:* = getObj(sData, currentVarData, values[2]);
 			switch (values[1]) {
 				case "=":
+				case "==":
 					if (values.length === 3) {
 						if (o) {
 							b = true;
@@ -617,16 +623,49 @@ package swift.core.magic
 						}
 					}
 					break;
+				case "===":
+					if (values.length === 3) {
+						if (o) {
+							b = true;
+						}
+					}
+					else {
+						b = true;
+						for (i = 3, l = values.length; i < l; i++) {
+							if (o !== getObj(sData, currentVarData, values[i])) {
+								b = false;
+								break;
+							}
+						}
+					}
+					break;
 				case "!":
+				case "!=":
 					if (values.length === 3) {
 						if (!o) {
 							b = true;
 						}
 					}
 					else {
-						b = true;o
+						b = true;
 						for (i = 3, l = values.length; i < l; i++) {
 							if (o == getObj(sData, currentVarData, values[i])) {
+								b = false;
+								break;
+							}
+						}
+					}
+					break;
+				case "!==":
+					if (values.length === 3) {
+						if (!o) {
+							b = true;
+						}
+					}
+					else {
+						b = true;
+						for (i = 3, l = values.length; i < l; i++) {
+							if (o === getObj(sData, currentVarData, values[i])) {
 								b = false;
 								break;
 							}
@@ -716,7 +755,7 @@ package swift.core.magic
 			callee = null;
 			sData["this"] = currentFB;
 			sData["arguments"] = parameters;
-			var fromIndex:uint, bIndex:uint, indexVLen:uint, indexV:Vector.<uint> = currentFB.indexV, cmds:Vector.<Array> = currentFB.cmds, args:Array, bk:MagicBlockData = currentFB, bV:Vector.<MagicBlockData>, wV:Vector.<MagicBlockData>, tV:Vector.<MagicBlockData>, tE:Error, sw:*, currentVarData:MagicVarData = new MagicVarData();
+			var fromIndex:uint, bIndex:uint, indexVLen:uint, indexV:Vector.<uint> = currentFB.indexV, cmds:Vector.<Array> = currentFB.cmds, args:Array, bk:MagicBlockData = currentFB, bV:Vector.<MagicBlockData>, wV:Vector.<MagicBlockData>, tV:Vector.<MagicBlockData>, tE:Error, sw:*, currentVarData:MagicVarData = new MagicVarData(), tb:MagicTempBlock = new MagicTempBlock(), tbd:MagicTempBlockData;
 			currentVarData.fun = currentFB;
 			if (null !== parentVarData) {
 				currentVarData.parent = parentVarData;
@@ -739,9 +778,8 @@ package swift.core.magic
 			
 			parameters = null;
 			
-			bk.blockIndex = 0;
-			bk.nextIndex = 0;
-			bk.flag = true;
+			tbd = tb.getBlockData(bk);
+			tbd.flag = true;
 			
 			for (var i:uint = currentFB.start, l:uint = currentFB.end !== 0 ? currentFB.end : cmds.length; i < l;) {
 				if (i === bIndex) {
@@ -756,7 +794,7 @@ package swift.core.magic
 					continue;
 				}
 				else if (i > bIndex) {
-					for (fromIndex = 0; fromIndex < indexVLen; fromIndex += 2) {
+					for (; fromIndex < indexVLen; fromIndex += 2) {
 						if (i <= indexV[fromIndex]) {
 							bIndex = indexV[fromIndex];
 							break;
@@ -773,165 +811,162 @@ package swift.core.magic
 						}
 						continue;
 					}
+					else if (i > bIndex) {
+						bIndex = uint.MAX_VALUE;
+					}
 				}
 				args = cmds[i];
 				if (null === tV) {
 					switch (args[0]) {
 						case "if":
 							if (null !== bk.blockV) {
-								bk = bk.blockV[bk.blockIndex++];
-								bk.blockIndex = 0;
-								bk.nextIndex = 0;
-								bk.flag = false;
+								bk = bk.blockV[tbd.blockIndex];
+								tbd = tb.getBlockData(bk);
+								tbd.clear();
+								tbd.flag = false;
 								if (doIf(sData, currentVarData, args) === true) {
-									bk.flag = true;
+									tbd.flag = true;
 								}
 								else if (null !== bk.next) {
-									bk = bk.next[bk.nextIndex++];
-									bk.blockIndex = 0;
-									bk.nextIndex = 0;
-									bk.flag = false;
+									bk = bk.next[tbd.nextIndex++];
+									tbd = tb.getBlockData(bk);
+									tbd.clear();
+									tbd.flag = false;
 									i = bk.start;
 									continue;
 								}
 								else {
 									i = bk.end;
 									bk = bk.parent;
+									tbd = tb.getBlockData(bk);
 									continue;
 								}
 							}
 							break;
 						case "elseif":
-							if (bk.flag === true) {
-								bk.flag = false;
+							if (tbd.flag === true) {
+								tbd.flag = false;
 								if (bk.type === MagicEnum.TYPE_ELSE) {
 									bk = bk.parent;
 								}
 								i = bk.end;
 								bk = bk.parent;
+								tbd = tb.getBlockData(bk);
 								continue;
 							}
 							else {
 								if (doIf(sData, currentVarData, args) === true) {
-									bk.flag = true;
+									tbd.flag = true;
 								}
 								else {
 									bk = bk.parent;
-									if (bk.nextIndex !== bk.next.length) {
-										bk = bk.next[bk.nextIndex];
-										bk.blockIndex = 0;
-										bk.nextIndex = 0;
-										bk.flag = false;
+									tbd = tb.getBlockData(bk);
+									if (tbd.nextIndex !== bk.next.length) {
+										bk = bk.next[tbd.nextIndex];
+										tbd = tb.getBlockData(bk);
+										tbd.clear();
+										tbd.flag = false;
 										i = bk.start;
 										continue;
 									}
 									else {
 										i = bk.end;
 										bk = bk.parent;
+										tbd = tb.getBlockData(bk);
 										continue;
 									}
 								}
 							}
 							break;
 						case "else":
-							if (bk.flag === true) {
-								bk.flag = false;
+							if (tbd.flag === true) {
+								tbd.flag = false;
 								if (bk.type === MagicEnum.TYPE_ELSE) {
 									bk = bk.parent;
 								}
 								i = bk.end;
 								bk = bk.parent;
+								tbd = tb.getBlockData(bk);
 								continue;
 							}
 							else {
-								bk.flag = true;
+								tbd.flag = true;
 							}
-							break;
-						case "endif":
-							if (bk.type === MagicEnum.TYPE_ELSE) {
-								bk = bk.parent;
-							}
-							bk = bk.parent;
 							break;
 						case "switch":
 							if (null !== bk.blockV) {
-								bk = bk.blockV[bk.blockIndex];
-								bk.blockIndex = 0;
-								bk.nextIndex = 0;
-								bk.flag = false;
+								bk = bk.blockV[tbd.blockIndex];
+								tbd = tb.getBlockData(bk);
+								tbd.clear();
+								tbd.flag = false;
 								if (null !== bk.next) {
 									sw = doOp(sData, currentVarData, args.slice(1));
 									if (null === bV) {
 										bV = new Vector.<MagicBlockData>();
 									}
 									bV[bV.length] = bk;
-									bk = bk.next[bk.nextIndex++];
-									bk.blockIndex = 0;
-									bk.nextIndex = 0;
-									bk.flag = false;
+									bk = bk.next[tbd.nextIndex++];
+									tbd = tb.getBlockData(bk);
+									tbd.clear();
+									tbd.flag = false;
 									i = bk.start;
 								}
 								else {
 									i = bk.end;
 									bk = bk.parent;
+									tbd = tb.getBlockData(bk);
+									tbd.blockIndex++;
 								}
 								continue;
 							}
 							break;
 						case "case":
-							if (bk.flag === false) {
+							if (tbd.flag === false) {
 								if (sw === doOp(sData, currentVarData, args.slice(1))) {
-									bk.flag = true;
+									tbd.flag = true;
 									sw = null;
 								}
 								else {
 									bk = bk.parent;
-									if (bk.nextIndex !== bk.next.length) {
-										bk = bk.next[bk.nextIndex++];
-										bk.blockIndex = 0;
-										bk.nextIndex = 0;
-										bk.flag = false;
+									tbd = tb.getBlockData(bk);
+									if (tbd.nextIndex !== bk.next.length) {
+										bk = bk.next[tbd.nextIndex++];
+										tbd = tb.getBlockData(bk);
+										tbd.clear();
+										tbd.flag = false;
 										i = bk.start;
 									}
 									else {
 										i = bk.end;
 										bk = bk.parent;
-										bk.blockIndex++;
+										tbd = tb.getBlockData(bk);
+										tbd.blockIndex++;
 										if (bV.length === 1) {
 											bV = null;
 										}
 										else {
 											bV.length--;
 										}
+										sw = null;
 									}
 									continue;
 								}
 							}
 							break;
 						case "default":
-							if (bk.flag === false) {
-								bk.flag = true;
+							if (tbd.flag === false) {
+								tbd.flag = true;
 								sw = null;
-							}
-							break;
-						case "endswitch":
-							bk = bk.parent;
-							bk.blockIndex++;
-							if (bV.length === 1) {
-								bV = null;
-							}
-							else {
-								bV.length--;
 							}
 							break;
 						case "while":
 							if (null !== bk.blockV) {
-								bk = bk.blockV[bk.blockIndex];
-								bk.blockIndex = 0;
-								bk.nextIndex = 0;
-								bk.flag = false;
+								bk = bk.blockV[tbd.blockIndex];
+								tbd = tb.getBlockData(bk);
+								tbd.clear();
+								tbd.flag = false;
 								if (doIf(sData, currentVarData, args) === true) {
-									bk.flag = true;
+									tbd.flag = true;
 									if (null === bV) {
 										bV = new Vector.<MagicBlockData>();
 									}
@@ -941,33 +976,17 @@ package swift.core.magic
 									bV[bV.length] = wV[wV.length] = bk;
 									if (bIndex >= bk.end) {
 										bIndex = 0;
+										fromIndex = 0;
 									}
 								}
 								else {
 									i = bk.end;
 									bk = bk.parent;
-									bk.blockIndex++;
+									tbd = tb.getBlockData(bk);
+									tbd.blockIndex++;
 									continue;
 								}
 							}
-							break;
-						case "endwhile":
-							i = bk.start;
-							bk = bk.parent;
-							if (bV.length === 1) {
-								bV = null;
-								wV = null;
-							}
-							else {
-								bV.length--;
-								if (wV.length === 1) {
-									wV = null;
-								}
-								else {
-									wV.length--;
-								}
-							}
-							continue;
 							break;
 						case "break":
 							bk = bV[bV.length - 1];
@@ -990,7 +1009,8 @@ package swift.core.magic
 							}
 							i = bk.end;
 							bk = bk.parent;
-							bk.blockIndex++;
+							tbd = tb.getBlockData(bk);
+							tbd.blockIndex++;
 							continue;
 							break;
 						case "continue":
@@ -1013,10 +1033,14 @@ package swift.core.magic
 							}
 							i = bk.start;
 							bk = bk.parent;
+							tbd = tb.getBlockData(bk);
 							continue;
 							break;
 						case "return":
-							if (bk.flag === true) {
+							if (tbd.flag === true) {
+								tb.clear();
+								tb = null;
+								tbd = null;
 								indexV = null;
 								cmds = null;
 								bk = null;
@@ -1032,10 +1056,10 @@ package swift.core.magic
 							break;
 						case "try":
 							if (null !== bk.blockV) {
-								bk = bk.blockV[bk.blockIndex++];
-								bk.blockIndex = 0;
-								bk.nextIndex = 0;
-								bk.flag = true;
+								bk = bk.blockV[tbd.blockIndex];
+								tbd = tb.getBlockData(bk);
+								tbd.clear();
+								tbd.flag = true;
 								if (null === tV) {
 									tV = new Vector.<MagicBlockData>();
 								}
@@ -1043,9 +1067,11 @@ package swift.core.magic
 							}
 							break;
 						case "catch":
-							if (bk.flag === true) {
+							if (tbd.flag === true) {
 								i = bk.end;
 								bk = bk.parent;
+								tbd = tb.getBlockData(bk);
+								tbd.blockIndex++;
 								if (null !== tV) {
 									if (tV.length === 1) {
 										tV = null;
@@ -1056,7 +1082,7 @@ package swift.core.magic
 								}
 							}
 							else {
-								bk.flag = true;
+								tbd.flag = true;
 								if (args.length !== 1) {
 									if (null === currentVarData.vars) {
 										currentVarData.vars = new Dictionary();
@@ -1068,20 +1094,64 @@ package swift.core.magic
 								}
 							}
 							break;
+						case "end":
+						case "endif":
+						case "endswitch":
+						case "endwhile":
 						case "endtrycatch":
-							bk = bk.parent.parent;
-							if (null !== tV) {
-								if (tV.length === 1) {
-									tV = null;
-								}
-								else {
-									tV.length--;
-								}
+							while (bk.type === MagicEnum.TYPE_ELSE) {
+								bk = bk.parent;
 							}
-							tE = null;
+							switch (bk.type) {
+								case MagicEnum.TYPE_WHILE:
+									i = bk.start;
+									bk = bk.parent;
+									tbd = tb.getBlockData(bk);
+									if (bV.length === 1) {
+										bV = null;
+										wV = null;
+									}
+									else {
+										bV.length--;
+										if (wV.length === 1) {
+											wV = null;
+										}
+										else {
+											wV.length--;
+										}
+									}
+									continue;
+									break;
+								default:
+									switch (bk.type) {
+										case MagicEnum.TYPE_SWITCH:
+											if (bV.length === 1) {
+												bV = null;
+											}
+											else {
+												bV.length--;
+											}
+											break;
+										case MagicEnum.TYPE_TRY:
+											if (null !== tV) {
+												if (tV.length === 1) {
+													tV = null;
+												}
+												else {
+													tV.length--;
+												}
+											}
+											tE = null;
+											break;
+									}
+									bk = bk.parent;
+									tbd = tb.getBlockData(bk);
+									tbd.blockIndex++;
+									break;
+							}
 							break;
 						default:
-							if (bk.flag === true) {
+							if (tbd.flag === true) {
 								doOp(sData, currentVarData, args);
 							}
 							break;
@@ -1092,159 +1162,153 @@ package swift.core.magic
 						switch (args[0]) {
 							case "if":
 								if (null !== bk.blockV) {
-									bk = bk.blockV[bk.blockIndex++];
-									bk.blockIndex = 0;
-									bk.nextIndex = 0;
-									bk.flag = false;
+									bk = bk.blockV[tbd.blockIndex];
+									tbd = tb.getBlockData(bk);
+									tbd.clear();
+									tbd.flag = false;
 									if (doIf(sData, currentVarData, args) === true) {
-										bk.flag = true;
+										tbd.flag = true;
 									}
 									else if (null !== bk.next) {
-										bk = bk.next[bk.nextIndex++];
-										bk.blockIndex = 0;
-										bk.nextIndex = 0;
-										bk.flag = false;
+										bk = bk.next[tbd.nextIndex++];
+										tbd = tb.getBlockData(bk);
+										tbd.clear();
+										tbd.flag = false;
 										i = bk.start;
 										continue;
 									}
 									else {
 										i = bk.end;
 										bk = bk.parent;
+										tbd = tb.getBlockData(bk);
 										continue;
 									}
 								}
 								break;
 							case "elseif":
-								if (bk.flag === true) {
-									bk.flag = false;
+								if (tbd.flag === true) {
+									tbd.flag = false;
 									if (bk.type === MagicEnum.TYPE_ELSE) {
 										bk = bk.parent;
 									}
 									i = bk.end;
 									bk = bk.parent;
+									tbd = tb.getBlockData(bk);
 									continue;
 								}
 								else {
 									if (doIf(sData, currentVarData, args) === true) {
-										bk.flag = true;
+										tbd.flag = true;
 									}
 									else {
 										bk = bk.parent;
-										if (bk.nextIndex !== bk.next.length) {
-											bk = bk.next[bk.nextIndex];
-											bk.blockIndex = 0;
-											bk.nextIndex = 0;
-											bk.flag = false;
+										tbd = tb.getBlockData(bk);
+										if (tbd.nextIndex !== bk.next.length) {
+											bk = bk.next[tbd.nextIndex];
+											tbd = tb.getBlockData(bk);
+											tbd.clear();
+											tbd.flag = false;
 											i = bk.start;
 											continue;
 										}
 										else {
 											i = bk.end;
 											bk = bk.parent;
+											tbd = tb.getBlockData(bk);
 											continue;
 										}
 									}
 								}
 								break;
 							case "else":
-								if (bk.flag === true) {
-									bk.flag = false;
+								if (tbd.flag === true) {
+									tbd.flag = false;
 									if (bk.type === MagicEnum.TYPE_ELSE) {
 										bk = bk.parent;
 									}
 									i = bk.end;
 									bk = bk.parent;
+									tbd = tb.getBlockData(bk);
 									continue;
 								}
 								else {
-									bk.flag = true;
+									tbd.flag = true;
 								}
-								break;
-							case "endif":
-								if (bk.type === MagicEnum.TYPE_ELSE) {
-									bk = bk.parent;
-								}
-								bk = bk.parent;
 								break;
 							case "switch":
 								if (null !== bk.blockV) {
-									bk = bk.blockV[bk.blockIndex];
-									bk.blockIndex = 0;
-									bk.nextIndex = 0;
-									bk.flag = false;
+									bk = bk.blockV[tbd.blockIndex];
+									tbd = tb.getBlockData(bk);
+									tbd.clear();
+									tbd.flag = false;
 									if (null !== bk.next) {
 										sw = doOp(sData, currentVarData, args.slice(1));
 										if (null === bV) {
 											bV = new Vector.<MagicBlockData>();
 										}
 										bV[bV.length] = bk;
-										bk = bk.next[bk.nextIndex++];
-										bk.blockIndex = 0;
-										bk.nextIndex = 0;
-										bk.flag = false;
+										bk = bk.next[tbd.nextIndex++];
+										tbd = tb.getBlockData(bk);
+										tbd.clear();
+										tbd.flag = false;
 										i = bk.start;
 									}
 									else {
 										i = bk.end;
 										bk = bk.parent;
+										tbd = tb.getBlockData(bk);
+										tbd.blockIndex++;
 									}
 									continue;
 								}
 								break;
 							case "case":
-								if (bk.flag === false) {
+								if (tbd.flag === false) {
 									if (sw === doOp(sData, currentVarData, args.slice(1))) {
-										bk.flag = true;
+										tbd.flag = true;
 										sw = null;
 									}
 									else {
 										bk = bk.parent;
-										if (bk.nextIndex !== bk.next.length) {
-											bk = bk.next[bk.nextIndex++];
-											bk.blockIndex = 0;
-											bk.nextIndex = 0;
-											bk.flag = false;
+										tbd = tb.getBlockData(bk);
+										if (tbd.nextIndex !== bk.next.length) {
+											bk = bk.next[tbd.nextIndex++];
+											tbd = tb.getBlockData(bk);
+											tbd.clear();
+											tbd.flag = false;
 											i = bk.start;
 										}
 										else {
 											i = bk.end;
 											bk = bk.parent;
-											bk.blockIndex++;
+											tbd = tb.getBlockData(bk);
+											tbd.blockIndex++;
 											if (bV.length === 1) {
 												bV = null;
 											}
 											else {
 												bV.length--;
 											}
+											sw = null;
 										}
 										continue;
 									}
 								}
 								break;
 							case "default":
-								if (bk.flag === false) {
-									bk.flag = true;
+								if (tbd.flag === false) {
+									tbd.flag = true;
 									sw = null;
-								}
-								break;
-							case "endswitch":
-								bk = bk.parent;
-								bk.blockIndex++;
-								if (bV.length === 1) {
-									bV = null;
-								}
-								else {
-									bV.length--;
 								}
 								break;
 							case "while":
 								if (null !== bk.blockV) {
-									bk = bk.blockV[bk.blockIndex];
-									bk.blockIndex = 0;
-									bk.nextIndex = 0;
-									bk.flag = false;
+									bk = bk.blockV[tbd.blockIndex];
+									tbd = tb.getBlockData(bk);
+									tbd.clear();
+									tbd.flag = false;
 									if (doIf(sData, currentVarData, args) === true) {
-										bk.flag = true;
+										tbd.flag = true;
 										if (null === bV) {
 											bV = new Vector.<MagicBlockData>();
 										}
@@ -1254,33 +1318,17 @@ package swift.core.magic
 										bV[bV.length] = wV[wV.length] = bk;
 										if (bIndex >= bk.end) {
 											bIndex = 0;
+											fromIndex = 0;
 										}
 									}
 									else {
 										i = bk.end;
 										bk = bk.parent;
-										bk.blockIndex++;
+										tbd = tb.getBlockData(bk);
+										tbd.blockIndex++;
 										continue;
 									}
 								}
-								break;
-							case "endwhile":
-								i = bk.start;
-								bk = bk.parent;
-								if (bV.length === 1) {
-									bV = null;
-									wV = null;
-								}
-								else {
-									bV.length--;
-									if (wV.length === 1) {
-										wV = null;
-									}
-									else {
-										wV.length--;
-									}
-								}
-								continue;
 								break;
 							case "break":
 								bk = bV[bV.length - 1];
@@ -1303,7 +1351,8 @@ package swift.core.magic
 								}
 								i = bk.end;
 								bk = bk.parent;
-								bk.blockIndex++;
+								tbd = tb.getBlockData(bk);
+								tbd.blockIndex++;
 								continue;
 								break;
 							case "continue":
@@ -1326,10 +1375,14 @@ package swift.core.magic
 								}
 								i = bk.start;
 								bk = bk.parent;
+								tbd = tb.getBlockData(bk);
 								continue;
 								break;
 							case "return":
-								if (bk.flag === true) {
+								if (tbd.flag === true) {
+									tb.clear();
+									tb = null;
+									tbd = null;
 									indexV = null;
 									cmds = null;
 									bk = null;
@@ -1339,15 +1392,16 @@ package swift.core.magic
 									tE = null;
 									sw = null;
 									currentFB = null;
-									return doOp(sData, currentVarData, args.slice(1));
+									if (args.length === 1) return null;
+									else return doOp(sData, currentVarData, args.slice(1));
 								}
 								break;
 							case "try":
 								if (null !== bk.blockV) {
-									bk = bk.blockV[bk.blockIndex++];
-									bk.blockIndex = 0;
-									bk.nextIndex = 0;
-									bk.flag = true;
+									bk = bk.blockV[tbd.blockIndex];
+									tbd = tb.getBlockData(bk);
+									tbd.clear();
+									tbd.flag = true;
 									if (null === tV) {
 										tV = new Vector.<MagicBlockData>();
 									}
@@ -1355,9 +1409,11 @@ package swift.core.magic
 								}
 								break;
 							case "catch":
-								if (bk.flag === true) {
+								if (tbd.flag === true) {
 									i = bk.end;
 									bk = bk.parent;
+									tbd = tb.getBlockData(bk);
+									tbd.blockIndex++;
 									if (null !== tV) {
 										if (tV.length === 1) {
 											tV = null;
@@ -1368,7 +1424,7 @@ package swift.core.magic
 									}
 								}
 								else {
-									bk.flag = true;
+									tbd.flag = true;
 									if (args.length !== 1) {
 										if (null === currentVarData.vars) {
 											currentVarData.vars = new Dictionary();
@@ -1380,20 +1436,64 @@ package swift.core.magic
 									}
 								}
 								break;
+							case "end":
+							case "endif":
+							case "endswitch":
+							case "endwhile":
 							case "endtrycatch":
-								bk = bk.parent.parent;
-								if (null !== tV) {
-									if (tV.length === 1) {
-										tV = null;
-									}
-									else {
-										tV.length--;
-									}
+								while (bk.type === MagicEnum.TYPE_ELSE) {
+									bk = bk.parent;
 								}
-								tE = null;
+								switch (bk.type) {
+									case MagicEnum.TYPE_WHILE:
+										i = bk.start;
+										bk = bk.parent;
+										tbd = tb.getBlockData(bk);
+										if (bV.length === 1) {
+											bV = null;
+											wV = null;
+										}
+										else {
+											bV.length--;
+											if (wV.length === 1) {
+												wV = null;
+											}
+											else {
+												wV.length--;
+											}
+										}
+										continue;
+										break;
+									default:
+										switch (bk.type) {
+											case MagicEnum.TYPE_SWITCH:
+												if (bV.length === 1) {
+													bV = null;
+												}
+												else {
+													bV.length--;
+												}
+												break;
+											case MagicEnum.TYPE_TRY:
+												if (null !== tV) {
+													if (tV.length === 1) {
+														tV = null;
+													}
+													else {
+														tV.length--;
+													}
+												}
+												tE = null;
+												break;
+										}
+										bk = bk.parent;
+										tbd = tb.getBlockData(bk);
+										tbd.blockIndex++;
+										break;
+								}
 								break;
 							default:
-								if (bk.flag === true) {
+								if (tbd.flag === true) {
 									doOp(sData, currentVarData, args);
 								}
 								break;
@@ -1402,11 +1502,13 @@ package swift.core.magic
 					catch (error:Error) {
 						tE = new Error("line: " + (i + 1) + " :: " + error.message, error.errorID);
 						bk = tV[tV.length - 1];
-						bk = bk.next[bk.nextIndex];
-						bk.blockIndex = 0;
-						bk.nextIndex = 0;
-						bk.flag = false;
-						i = bk.start;
+						if (null !== bk.next) {
+							bk = bk.next[tbd.nextIndex];
+							tbd = tb.getBlockData(bk);
+							tbd.clear();
+							tbd.flag = false;
+							i = bk.start;
+						}
 						if (tV.length === 1) {
 							tV = null;
 						}
@@ -1418,6 +1520,9 @@ package swift.core.magic
 				}
 				i++;
 			}
+			tb.clear();
+			tb = null;
+			tbd = null;
 			indexV = null;
 			cmds = null;
 			args = null;
@@ -1470,6 +1575,7 @@ package swift.core.magic
 				}
 				switch (v[0]) {
 					case "function":
+					case "func":
 						if (n === 1) {
 							error = "the function has no name, at line: " + (i + 1);
 							rootBlockData.clear();
@@ -1486,8 +1592,9 @@ package swift.core.magic
 							return error;
 						}
 						currentFB = new MagicFunctionData();
-						currentFB.parent = fV[fV.length - 1];
+						currentFB.parent = bk;
 						currentFB.cmds = rootBlockData.cmds;
+						currentFB.type = MagicEnum.TYPE_FUNCTION;
 						currentFB.start = i + 1;
 						if (n !== 2) {
 							currentFB.parameters = new Vector.<String>();
@@ -1498,9 +1605,8 @@ package swift.core.magic
 							}
 							k = null;
 						}
-						fV[fV.length] = currentFB;
 						bk = currentFB;
-						currentFB = currentFB.parent as MagicFunctionData;
+						currentFB = fV[fV.length - 1] as MagicFunctionData;
 						if (null === currentFB.fun) {
 							currentFB.fun = new Dictionary();
 						}
@@ -1514,14 +1620,7 @@ package swift.core.magic
 						else {
 							currentFB.indexV[currentFB.indexV.length] = i;
 						}
-						currentFB = fV[fV.length - 1];
-						break;
-					case "endfunction":
-						currentFB.end = i;
-						fV.length--;
-						currentFB = fV[fV.length - 1];
-						currentFB.indexV[currentFB.indexV.length] = i;
-						bk = currentFB;
+						currentFB = fV[fV.length] = bk as MagicFunctionData;
 						break;
 					case "if":
 					case "switch":
@@ -1548,7 +1647,11 @@ package swift.core.magic
 								else {
 									switch (v[1]) {
 										case "=":
+										case "==":
+										case "===":
 										case "!":
+										case "!=":
+										case "!==":
 										case "<":
 										case ">":
 										case "<=":
@@ -1597,6 +1700,7 @@ package swift.core.magic
 							bk.blockV = new Vector.<MagicBlockData>();
 						}
 						bk2 = new MagicBlockData();
+						bk2.type = MagicEnum.TYPE_ENUM[v[0]];
 						bk2.start = i;
 						bk2.parent = bk;
 						bk.blockV[bk.blockV.length] = bk2;
@@ -1607,6 +1711,21 @@ package swift.core.magic
 					case "case":
 					case "default":
 					case "catch":
+						if (null === bk2) {
+							error = "the block has not open, at line: " + (i + 1);
+							rootBlockData.clear();
+							str = null;
+							cmds = null;
+							o = null;
+							r = null;
+							v = null;
+							currentFB = null;
+							bk = null;
+							bk2 = null;
+							fV = null;
+							rootBlockData = null;
+							return error;
+						}
 						switch (v[0]) {
 							case "elseif":
 								if (n < 3) {
@@ -1627,7 +1746,11 @@ package swift.core.magic
 								else {
 									switch (v[1]) {
 										case "=":
+										case "==":
+										case "===":
 										case "!":
+										case "!=":
+										case "!==":
 										case "<":
 										case ">":
 										case "<=":
@@ -1681,16 +1804,42 @@ package swift.core.magic
 						bk.parent = bk2;
 						bk2.next[bk2.next.length] = bk;
 						break;
+					case "end":
+					case "endfunction":
 					case "endif":
 					case "endswitch":
 					case "endwhile":
 					case "endtrycatch":
-						bk2.end = i + 1;
-						bk2 = bk2.parent;
-						if (bk2.type === 3) {
-							bk2 = bk2.parent;
+						if (bk.type === MagicEnum.TYPE_FUNCTION) {
+							currentFB.end = i;
+							fV.length--;
+							currentFB = fV[fV.length - 1];
+							currentFB.indexV[currentFB.indexV.length] = i;
 						}
-						bk = bk2;
+						else {
+							if (null === bk2) {
+								error = "the block has not open, at line: " + (i + 1);
+								rootBlockData.clear();
+								str = null;
+								cmds = null;
+								o = null;
+								r = null;
+								v = null;
+								currentFB = null;
+								bk = null;
+								bk2 = null;
+								fV = null;
+								rootBlockData = null;
+								return error;
+							}
+							bk = bk2;
+							bk.end = i + 1;
+							bk2 = bk2.parent;
+							while (null !== bk2 && bk2.type < MagicEnum.TYPE_BLOCK_START) {
+								bk2 = bk2.parent;
+							}
+						}
+						bk = bk.parent;
 						break;
 					case "break":
 					case "continue":
@@ -1701,6 +1850,40 @@ package swift.core.magic
 					case "as":
 					case "cast":
 						switch (v[0]) {
+							case "break":
+								if (null === bk2 || bk2.type !== MagicEnum.TYPE_SWITCH || bk2.type !== MagicEnum.TYPE_WHILE) {
+									error = "the block has not open, at line: " + (i + 1);
+									rootBlockData.clear();
+									str = null;
+									cmds = null;
+									o = null;
+									r = null;
+									v = null;
+									currentFB = null;
+									bk = null;
+									bk2 = null;
+									fV = null;
+									rootBlockData = null;
+									return error;
+								}
+								break;
+							case "continue":
+								if (null === bk2 || bk2.type !== MagicEnum.TYPE_WHILE) {
+									error = "the block has not open, at line: " + (i + 1);
+									rootBlockData.clear();
+									str = null;
+									cmds = null;
+									o = null;
+									r = null;
+									v = null;
+									currentFB = null;
+									bk = null;
+									bk2 = null;
+									fV = null;
+									rootBlockData = null;
+									return error;
+								}
+								break;
 							case "++":
 							case "--":
 							case "!":
@@ -1723,8 +1906,8 @@ package swift.core.magic
 								else {
 									for (m = 1; m < n; m++) {
 										switch ((v[m] as String).charAt(0)) {
-											case "@":
 											case "$":
+											case "@":
 												break;
 											default:
 												error = "the operand must be a variable, an element in an array, or a property of an object, at line: " + (i + 1);
@@ -1784,10 +1967,10 @@ package swift.core.magic
 					case ">>>":
 					case "||":
 					case "&&":
-					case "tf":
+					case "typeof":
 						switch (v[0]) {
 							case "~":
-							case "tf":
+							case "typeof":
 								if (n === 1) {
 									error = "incorrect number of arguments, at line: " + (i + 1);
 									rootBlockData.clear();
@@ -1823,8 +2006,8 @@ package swift.core.magic
 								}
 						}
 						switch ((v[1] as String).charAt(0)) {
-							case "@":
 							case "$":
+							case "@":
 								break;
 							default:
 								error = "the operand must be a variable, an element in an array, or a property of an object, at line: " + (i + 1);
@@ -1863,8 +2046,8 @@ package swift.core.magic
 							return error;
 						}
 						switch ((v[1] as String).charAt(0)) {
-							case "@":
 							case "$":
+							case "@":
 								break;
 							default:
 								error = "the operand must be a variable, an element in an array, or a property of an object, at line: " + (i + 1);

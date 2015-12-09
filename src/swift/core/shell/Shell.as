@@ -123,7 +123,21 @@ package swift.core.shell
 		 */
 		public function get shellController():ShellController
 		{
-			return null !== _shellData._shellController ? _shellData._shellController : _shellData._shellController = (null === _shellData._parent ? null : _shellData._parent.shellController);
+			if (null !== _shellData._shellController) return _shellData._shellController;
+			var shellData:ShellData = _shellData;
+			while (null === shellData._shellController) {
+				if (null !== shellData._parent) shellData = shellData._parent._shellData;
+				else break;
+			}
+			_shellData._shellController = shellData._shellController;
+			shellData = _shellData._parent._shellData;
+			while (null === shellData._shellController) {
+				shellData._shellController = _shellData._shellController;
+				if (null !== shellData._parent) shellData = shellData._parent._shellData;
+				else break;
+			}
+			shellData = null;
+			return _shellData._shellController;
 		}
 		
 		public function getShellByName(value:String):Shell
@@ -133,8 +147,13 @@ package swift.core.shell
 		
 		public function getShellByCommand(value:String, transparent:Boolean = false):Shell
 		{
-			var shell:Shell = null === _shellData._commands ? null : _shellData._commands[value] as Shell;
-			if (null === shell && transparent === true && null !== parent) shell = parent.getShellByCommand(value, true);
+			var shell:Shell, shellData:ShellData = _shellData;
+			while (null === shell) {
+				shell = null === shellData._commands ? null : shellData._commands[value] as Shell;
+				if (null === shell && transparent === true && null !== shellData._parent) shellData = shellData._parent._shellData;
+				else break;
+			}
+			shellData = null;
 			value = null;
 			return shell;
 		}
@@ -149,10 +168,12 @@ package swift.core.shell
 				if (null === _shellData._commands) _shellData._commands = new Dictionary();
 				if (_shellData._commands.hasOwnProperty(value.command) === true) throw new Error("same command: " + value.command);
 				_shellData._commands[value.command] = value;
+				_shellData._commandsLength++;
 			}
 			value._shellData._parent = this;
 			value._shellData._shellController = _shellData._shellController;
 			_shellData._shells[value.name] = value;
+			_shellData._shellsLength++;
 			value = null;
 		}
 		
@@ -163,8 +184,12 @@ package swift.core.shell
 			var shell:Shell = getShellByName(value);
 			shell._shellData._parent = null;
 			shell._shellData._shellController = null;
-			if (null !== shell.command) if (null !== _shellData._commands) delete _shellData._commands[shell.command];
+			if (null !== shell.command && null !== _shellData._commands && _shellData._commands.hasOwnProperty(shell.command) === true) {
+				delete _shellData._commands[shell.command];
+				_shellData._commandsLength--;
+			}
 			delete _shellData._shells[value];
+			_shellData._shellsLength--;
 			shell.clear();
 			shell = null;
 			value = null;
@@ -177,8 +202,10 @@ package swift.core.shell
 			var shell:Shell = getShellByCommand(value);
 			shell._shellData._parent = null;
 			shell._shellData._shellController = null;
-			if (null !== shell.command) delete _shellData._commands[shell.command];
-			if (null !== _shellData._shells) delete _shellData._shells[value];
+			delete _shellData._commands[shell.command];
+			_shellData._commandsLength--;
+			delete _shellData._shells[shell.name];
+			_shellData._shellsLength--;
 			shell.clear();
 			shell = null;
 			value = null;
