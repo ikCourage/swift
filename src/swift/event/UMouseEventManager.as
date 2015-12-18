@@ -191,7 +191,7 @@ package swift.event
 					}
 					else if (o.hasOwnProperty("mouseEnabled") === true) {
 						if (o["mouseEnabled"] === true && o.hitTestPoint(x, y, shapeFlag) === true) {
-							if (!(o is Bitmap) || bitmapFlag === false || null === (o as Bitmap).bitmapData || (o as Bitmap).bitmapData.getPixel(o.mouseX, o.mouseY) !== 0) {
+							if (!(o is Bitmap) || bitmapFlag === false || null === (o as Bitmap).bitmapData || ((o as Bitmap).bitmapData.getPixel32(o.mouseX, o.mouseY) >> 24) !== 0) {
 								c = null;
 								v = null;
 								v2 = null;

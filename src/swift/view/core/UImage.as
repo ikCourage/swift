@@ -33,7 +33,6 @@ package swift.view.core
 			_isClear = false;
 			_isLoaded = false;
 			if (null === request) return;
-			initLoading(loading);
 			_url = request is String ? request as String : (request as URLRequest).url;
 			_url += "UIMAGE";
 			var asset:Object = AssetsManager.get(_url, _useWeakReference);
@@ -44,9 +43,11 @@ package swift.view.core
 					clearView();
 					addChild(new Bitmap(asset as BitmapData));
 					__setSize();
+					setComplete(_completeF);
 					_url = null;
 				}
 				else {
+					initLoading(loading);
 					TEvent.newTrigger(_url, __triggerHandler);
 				}
 			}
@@ -73,7 +74,7 @@ package swift.view.core
 				if (null != bitmap) AssetsManager.put(_url, bitmap.bitmapData, _useWeakReference);
 				else AssetsManager.remove(_url, _useWeakReference);
 				TEvent.removeTrigger(_url, __triggerHandler);
-				TEvent.trigger(_url, "COMPLETE", [e, null != bitmap ? bitmap.bitmapData : null]);
+				TEvent.trigger(_url, "COMPLETE", [e, loader, null != bitmap ? bitmap.bitmapData : null]);
 				bitmap = null;
 			}
 			super.__completeHandler2(loader, e);
@@ -102,15 +103,16 @@ package swift.view.core
 					_isLoaded = true;
 					if (_isClear == true) return;
 					clearView();
-					addChild(new Bitmap(data[1] as BitmapData));
+					addChild(new Bitmap(data[2] as BitmapData));
 					__setSize();
+					setComplete(_completeF);
 					_url = null;
 					break;
 				case "IO_ERROR":
 					TEvent.removeTrigger(_url, __triggerHandler);
 					_isLoaded = true;
 					if (_isClear == true) return;
-					clear();
+					super.__ioErrorHandler(data);
 					_url = null;
 					break;
 				case "CLOSE":

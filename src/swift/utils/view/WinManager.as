@@ -15,7 +15,7 @@ package swift.utils.view
 		static public const CLEAR_GROUP:uint = 2;
 		static public const CLEAR_OTHER_ELEMENT:uint = 3;
 		static public const CLEAR_ELEMENT:uint = 4;
-		static public const RESIZE_ALL:uint = 5;
+		static public const RESIZE:uint = 5;
 		static public const ADD_ELEMENT:uint = 6;
 		
 		static public var SHOW_LAYOUT:Function = __showLayout;
@@ -110,9 +110,10 @@ package swift.utils.view
 							v = null;
 						}
 						break;
-					case RESIZE_ALL:
+					case RESIZE:
 						if (winLen !== 0) {
-							for each (v in wins) showLayout.apply(null, [v, -1].slice(0, sl));
+							if (null === groupName) for each (v in wins) showLayout.apply(null, [v, -1].slice(0, sl));
+							else if (wins.hasOwnProperty(groupName) === true) showLayout.apply(null, [wins[groupName], -1].slice(0, sl));
 							v = null;
 						}
 						break;
@@ -155,6 +156,7 @@ package swift.utils.view
 			}
 			x = (Ais.IMain.stage.stageWidth - x) * 0.5;
 			y = (Ais.IMain.stage.stageHeight - y) * 0.5;
+			trace(x, y);
 			for (i = 0; i < l; i++) {
 				TweenLite.to(v[i][2], 0.5, {x: x, y: y});
 				x += v[i][2].width;

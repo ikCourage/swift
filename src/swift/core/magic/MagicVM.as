@@ -761,8 +761,8 @@ package swift.core.magic
 				currentVarData.parent = parentVarData;
 				parentVarData = null;
 			}
-			bIndex = parameters.length;
-			if (bIndex !== 0) {
+			if (null !== currentFB.parameters) {
+				bIndex = currentFB.parameters.length > parameters.length ? parameters.length : currentFB.parameters.length;
 				currentVarData.vars = new Dictionary();
 				for (var j:uint; j < bIndex; j++) {
 					currentVarData.vars[currentFB.parameters[j]] = parameters[j];
@@ -2090,15 +2090,12 @@ package swift.core.magic
 				i++;
 			}
 			
+			if (fV.length !== 1) {
+				bk2 = fV[fV.length - 1];
+				null === error ? (error = "") : (error += "\n");
+				error += "the function has not end, at line: " + bk2.start;
+			}
 			if (bk !== rootBlockData) {
-				if (fV.length !== 1) {
-					bk2 = fV[fV.length - 1];
-					if (bk === bk2) {
-						bk = null;
-					}
-					null === error ? (error = "") : (error += "\n");
-					error += "the function has not end, at line: " + bk2.start;
-				}
 				if (null !== bk) {
 					null === error ? (error = "") : (error += "\n");
 					error += "the block has not end, at line: " + (bk.start + 1);

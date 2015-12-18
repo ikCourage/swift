@@ -1,7 +1,6 @@
 package swift.view.core
 {
 	import org.ais.event.TEvent;
-	import org.ais.system.Ais;
 	import org.aisy.autoclear.AisyAutoClear;
 	import org.aisy.display.USprite;
 	
@@ -29,7 +28,7 @@ package swift.view.core
 			if (null === mode) {
 				mode = [WinManager.CLEAR_OTHER_GROUP, WinManager.ADD_ELEMENT];
 			}
-			var arr:Array = [0, false, true, true, 0, 0, 1, false];
+			var arr:Array = [2, false, true, true, 0, 0, 1, false];
 			if (null === options) {
 				options = arr;
 			}
@@ -76,8 +75,8 @@ package swift.view.core
 			switch (type) {
 				case "RESIZE_ALL":
 					if (null !== GROUP_NAME) {
-						parent.x = (Ais.IMain.stage.stageWidth - parent.width) >> 1;
-						parent.y = (Ais.IMain.stage.stageHeight - parent.height) >> 1;
+						parent.width = width;
+						parent.height = height;
 						parent.alpha = 1;
 						WinEffect.show(parent, null, __show2);
 					}
