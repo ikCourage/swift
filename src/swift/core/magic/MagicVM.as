@@ -91,7 +91,7 @@ package swift.core.magic
 									obj = currentVarData.getVars(key, true);
 								}
 								else {
-									obj = currentVarData.getVars(getObj(sData, currentVarData, v[0]), true);
+									obj = currentVarData.getVar(getObj(sData, currentVarData, v[0]), true);
 									if (null !== obj) {
 										for (j = 1; j < n; j++) {
 											obj = obj[getObj(sData, currentVarData, v[j])];
@@ -119,7 +119,7 @@ package swift.core.magic
 									obj = currentVarData.getVars(key, true);
 								}
 								else {
-									obj = currentVarData.getVars(getObj(sData, currentVarData, v[0]), true);
+									obj = currentVarData.getVar(getObj(sData, currentVarData, v[0]), true);
 									if (null !== obj) {
 										for (j = 1; j < n; j++) {
 											obj = obj[getObj(sData, currentVarData, v[j])];

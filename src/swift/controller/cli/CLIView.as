@@ -609,7 +609,9 @@ package swift.controller.cli
 			tf.color = color;
 			_messageTextField.setTextFormat(tf, i, l);
 			if (null != _scroller) {
-				_scroller.layoutScroll(_scroller.getSource().x, _scroller.getSource().y, 0, 0, 1);
+				var x:Number = _scroller.getSource().x, y:Number = _scroller.getSource().y;
+				_scroller.updateView();
+				_scroller.layoutScroll(x, y, 0, 0);
 			}
 			_messageTextField.scrollV = _messageTextField.maxScrollV;
 			tf = null;

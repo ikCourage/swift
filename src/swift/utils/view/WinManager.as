@@ -156,7 +156,6 @@ package swift.utils.view
 			}
 			x = (Ais.IMain.stage.stageWidth - x) * 0.5;
 			y = (Ais.IMain.stage.stageHeight - y) * 0.5;
-			trace(x, y);
 			for (i = 0; i < l; i++) {
 				TweenLite.to(v[i][2], 0.5, {x: x, y: y});
 				x += v[i][2].width;
