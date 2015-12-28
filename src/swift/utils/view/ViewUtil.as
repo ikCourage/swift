@@ -57,12 +57,17 @@ package swift.utils.view
 			}
 		}
 		
-		static public function addEventInArray(arr:Array, callback:Function, type:String = MouseEvent.CLICK):void
+		static public function addEventInArray(arr:Array, callback:Function, type:String = MouseEvent.CLICK, buttonMode:Boolean = true):void
 		{
 			var obj:DisplayObject;
 			for (var i:int = 0, l:int = arr.length; i < l; i++) {
 				obj = arr[i];
-				if (obj is InteractiveObject) obj["addEventListener"](type, callback);
+				if (obj is InteractiveObject) {
+					if (obj.hasOwnProperty("buttonMode") == true) {
+						obj["buttonMode"] = buttonMode;
+					}
+					obj["addEventListener"](type, callback);
+				}
 			}
 		}
 		
@@ -102,13 +107,24 @@ package swift.utils.view
 			obj.y = -r.y;
 		}
 		
-		static public function clear(obj:*):void
+		static public function clear(obj:*, removeParent:Boolean = true):void
 		{
 			var l:int;
-			if (obj is IClear) (obj as IClear).clear();
+			if (obj is IClear) {
+				if (removeParent === true) (obj as IClear).clear();
+				else {
+					var c:DisplayObjectContainer = (obj is DisplayObject) ? obj.parent : null;
+					if (null !== c) {
+						l = c.getChildIndex(obj as DisplayObject);
+						(obj as IClear).clear();
+						c.addChildAt(obj as DisplayObject, l);
+					}
+					else (obj as IClear).clear();
+				}
+			}
 			else if (obj is DisplayObjectContainer) {
-				var c:DisplayObjectContainer = obj as DisplayObjectContainer;
-				if (null !== c.parent) c.parent.removeChild(c);
+				c = obj as DisplayObjectContainer;
+				if (removeParent === true && null !== c.parent) c.parent.removeChild(c);
 				for (l = c.numChildren; l > 0;) {
 					l--;
 					obj = c.getChildAt(l);
@@ -118,13 +134,13 @@ package swift.utils.view
 			}
 			else if (obj is DisplayObject) {
 				var o:DisplayObject = obj as DisplayObject;
-				if (null !== o.parent) o.parent.removeChild(o);
+				if (removeParent === true && null !== o.parent) o.parent.removeChild(o);
 			}
 			else if (obj is Array) {
 				var arr:Array = obj as Array;
 				for (l = arr.length; l > 0;) {
 					l--;
-					clear(arr[l]);
+					clear(arr[l], removeParent);
 				}
 			}
 		}
@@ -140,7 +156,7 @@ package swift.utils.view
 		{
 			clearBitmap();
 			if (null === view2) view2 = _bitmap = new Bitmap(drawStage());
-			Ais.IMain.stage.addChild(view2);
+			if (null === view2.parent) Ais.IMain.stage.addChild(view2);
 			if (null !== view) {
 				view.alpha = 0;
 			}

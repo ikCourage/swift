@@ -37,8 +37,8 @@ package swift.utils.view
 		static private function __show_back_easeOut(obj:DisplayObject, callBack:Function):void
 		{
 			obj.scaleX = obj.scaleY = 0;
-			var x:uint = obj.x;
-			var y:uint = obj.y;
+			var x:Number = obj.x;
+			var y:Number = obj.y;
 			var alpha:Number = obj.alpha;
 			
 			obj.x = Ais.IMain.stage.stageWidth >> 1;
@@ -52,8 +52,8 @@ package swift.utils.view
 		
 		static private function __hide_back_easeOut(obj:DisplayObject, callBack:Function):void
 		{
-			var x:uint = Ais.IMain.stage.stageWidth >> 1;
-			var y:uint = Ais.IMain.stage.stageHeight >> 1;
+			var x:Number = Ais.IMain.stage.stageWidth >> 1;
+			var y:Number = Ais.IMain.stage.stageHeight >> 1;
 			
 			TweenLite.to(obj, 0.7, {x: x, y: y, alpha: 0, scaleX: 0, scaleY: 0, ease: Back.easeIn, onComplete: callBack});
 			obj = null;

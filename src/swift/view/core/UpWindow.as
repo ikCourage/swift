@@ -36,8 +36,9 @@ package swift.view.core
 				options = options.concat(arr.slice(options.length));
 			}
 			TEvent.newTrigger("UP_WINDOW_M", __winHandler);
-			TEvent.trigger("UP_WINDOW_AIS", "SHOW", [this, NAME].concat(options));
 			TEvent.newTrigger("UP_WINDOW_NEW", __upWindowHandler);
+			TEvent.trigger("UP_WINDOW_AIS", "SHOW", [this, NAME].concat(options));
+			TEvent.newTrigger("UP_WINDOW_NEW", __upWindowHandler2);
 			if (null !== parent) {
 				WinManager.exec(GROUP_NAME, NAME, parent, mode, index);
 				__showEffect();
@@ -75,9 +76,20 @@ package swift.view.core
 			switch (type) {
 				case "RESIZE_ALL":
 					if (null !== GROUP_NAME) {
+						parent.scaleX = parent.scaleY = 1;
+						parent.alpha = 1;
 						parent.width = width;
 						parent.height = height;
-						parent.alpha = 1;
+					}
+					break;
+			}
+		}
+		
+		protected function __upWindowHandler2(type:String, data:* = null):void
+		{
+			switch (type) {
+				case "RESIZE_ALL":
+					if (null !== GROUP_NAME) {
 						WinEffect.show(parent, null, __show2);
 					}
 					break;
@@ -109,6 +121,7 @@ package swift.view.core
 		{
 			TEvent.removeTrigger("UP_WINDOW_M", __winHandler);
 			TEvent.removeTrigger("UP_WINDOW_NEW", __upWindowHandler);
+			TEvent.removeTrigger("UP_WINDOW_NEW", __upWindowHandler2);
 			if (null !== _autoClear) {
 				_autoClear.clear();
 				_autoClear = null;

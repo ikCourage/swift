@@ -55,9 +55,9 @@ package swift.utils.view
 		{
 			var matrix:Array = [];
 			var c1:int = 0, c2:int = 0, c3:int = 0;
-			if (color === "red") c1 = 1;
-			if (color === "green") c2 = 1;
-			if (color ==="blue") c3 = 1;
+			if (color.indexOf("r") !== -1) c1 = 1;
+			if (color.indexOf("g") !== -1) c2 = 1;
+			if (color.indexOf("b") !== -1) c3 = 1;
 			matrix = matrix.concat([c1, 0, 0, 0, 0]);
 			matrix = matrix.concat([0, c2, 0, 0, 0]);
 			matrix = matrix.concat([0, 0, c3, 0, 0]);
