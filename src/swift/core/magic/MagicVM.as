@@ -1851,7 +1851,7 @@ package swift.core.magic
 					case "cast":
 						switch (v[0]) {
 							case "break":
-								if (null === bk2 || bk2.type !== MagicEnum.TYPE_SWITCH || bk2.type !== MagicEnum.TYPE_WHILE) {
+								if (null === bk2 || (bk2.type !== MagicEnum.TYPE_SWITCH && bk2.type !== MagicEnum.TYPE_WHILE)) {
 									error = "the block has not open, at line: " + (i + 1);
 									rootBlockData.clear();
 									str = null;
